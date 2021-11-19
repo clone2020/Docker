@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+  reverseproxy:
+    depends_on:
+      - sonarqube
+    image: reverseproxy:latest
+    expose:
+      - 443
+    ports:
+      - "10.242.52.14:443:443"
+    networks:
+      - sonarnet
+    volumes:
+      - ./reverseproxy/nginx.conf:/etc/nginx/nginx.conf
+      - ./reverseproxy/cache/:/etc/nginx/cache
+      - ./reverseproxy/certs/:/etc/ssl/certs
+    restart: always
+
+  sonarqube:
+    depends_on:
+      - db
+    image: sonarqube:8.2-community
+    restart: always
+    expose:
+      - 9000
+    ports:
+      - "10.242.52.14:9000:9000"
+    networks:
+      - sonarnet
+    environment:
+      - sonar.jdbc.url=jdbc:postgresql://db:5432/sonarqube
+      - sonar.jdbc.username=sonarqube
+      - sonar.jdbc.password=asD123!@
+    volumes:
+      - /var/opt/sonarqube/sonarqube_conf:/opt/sonarqube/conf
+      - /var/opt/sonarqube/sonarqube_data:/opt/sonarqube/data
+      - /var/opt/sonarqube/sonarqube_extensions:/opt/sonarqube/extensions
+      - /var/opt/sonarqube/sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+      - /var/opt/sonarqube/sonarqube_logs:/opt/sonarqube/logs
+
+  db:
+    image: postgres:12.2
+    restart: always
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=sonarqube
+      - POSTGRES_PASSWORD=asD123!@
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - /var/opt/pgsql:/var/lib/postgresql
+      - /var/opt/postgresql_data:/var/lib/postgresql/data
+
+networks:
+  sonarnet:
+
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_bundled-plugins:
+  sonarqube_logs:
+  pgsql:
+  postgresql_data:
